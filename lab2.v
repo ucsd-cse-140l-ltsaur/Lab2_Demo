@@ -56,46 +56,41 @@ reg       l_cin;
 wire [7:0] result;
 reg  [7:0] result_reg;
 reg  rst_test;
-reg [3:0] i_data_rdy_tap;
+reg [1:0] i_data_rdy_tap;
+
+wire i_data_rdy_local_posedge;
+assign i_data_rdy_local_posedge = i_data_rdy_tap[0] & ~i_data_rdy_tap[1]; 
 
 // combine strobs generated within 2 cycles of i_clk_in
 always @(posedge i_clk_in) begin
     if(i_rst) begin
-	    i_data_rdy_tap[3:0] <= 4'b0000;
-	end
-	else begin
-	    if(i_data_rdy) begin
-		    i_data_rdy_tap[1:0] <= {2'b11};
-		    i_data_rdy_tap[3:2] <= {i_data_rdy_tap[2:1]};
-		end
-		else 
-		    i_data_rdy_tap[3:0] <= {i_data_rdy_tap[2:0], 1'b0};
-		
-	end
-end
-
-wire i_data_rdy_local;
-assign i_data_rdy_local = i_data_rdy_tap[1] & ~i_data_rdy_tap[3]; //2x pulse
-
-always @(posedge i_data_rdy_local  or posedge i_rst) 
-begin		
-    if(i_rst)begin
+	    i_data_rdy_tap[1:0] <= 2'b00;
         x <= 2'h00;
 	    y <= 2'h00;
 	    l_cin <= 1'b0;
 		rst_test <= 1;
 	end
-	else /*if (i_data_rdy_local)*/ begin
-	    rst_test <= 0;
-        x[7:0] <= i_r1[7:0];
-	    if ( i_substrate_signal) begin
-		    y[7:0] <= {~i_r2[7], ~i_r2[6], ~i_r2[4], ~i_r2[4], ~i_r2[3], ~i_r2[2], ~i_r2[1], ~i_r2[0]};
-		    l_cin <= 1'b1;
-	    end
-	    else begin
-	        y[7:0] <= i_r2[7:0];
-		    l_cin <= 1'b0;
-	    end
+	else begin
+		i_data_rdy_tap[1:0] <= {i_data_rdy_tap[0], i_data_rdy};
+
+        if(i_data_rdy_local_posedge) begin		
+	        rst_test <= 0;
+            x[7:0] <= i_r1[7:0];
+	        if (i_substrate_signal) begin
+		        y[7:0] <= {~i_r2[7], ~i_r2[6], ~i_r2[4], ~i_r2[4], ~i_r2[3], ~i_r2[2], ~i_r2[1], ~i_r2[0]};
+		        l_cin <= 1'b1;
+	        end
+	        else begin
+	            y[7:0] <= i_r2[7:0];
+		        l_cin <= 1'b0;
+			end
+		end
+		else begin
+            x <= x;
+	        y <= y;
+	        l_cin <= l_cin;
+		    rst_test <= rst_test;
+		end
 	end
 end
 
@@ -118,16 +113,16 @@ reg  [15:0] adder_data_ready_reg;  //output
 wire        o_adder_data_ready;
 
 
-assign adder_data_ready_wire = i_data_rdy_local;
+assign adder_data_ready_wire = i_data_rdy_local_posedge;
 //Cleared on data status clear request from Master controller reg [1:0]  adder_rdy_state;
 //generate a pulse of 2x i_clk_in, adder_data_ready_wire is a pulse of 2 i_clk_in
 assign o_adder_data_ready = adder_data_ready_reg[13] & ~adder_data_ready_reg[15];   
 assign o_rdy = o_adder_data_ready;
 
 always @(posedge i_clk_in or posedge i_rst) begin		
-    if(i_rst) 
+    if(i_rst) begin
         adder_data_ready_reg <= 4'h0000;
-		
+	end	
 	else begin
 		adder_data_ready_reg[15:0] <= {adder_data_ready_reg[14:0], adder_data_ready_wire}; 
 		
@@ -202,7 +197,7 @@ assign debug_is_DEL = &debug_DEL_test;
 reg [7:0] debug_reg;
 
 assign debug_adder_data_rdy_delay_line = |adder_data_ready_reg; //delay line 
-assign debug_adder_rdy_self_clear = i_data_rdy_local; //self clear latch
+assign debug_adder_rdy_self_clear = i_data_rdy_local_posedge; //self clear latch
 assign debug_x = |x;
 assign debug_y = |y;
 assign debug_cin = l_cin;
@@ -246,10 +241,10 @@ begin
 	            debug_reg[7:0] <= {i_r2[7:0]}; //local results		   
 	        end  else 
 		    if(debug_is_LB) begin
-	            debug_reg[7:0] <= {x[7:0]};
+	            debug_reg[7:0] <= {x[7:0]}; //{
             end else 		
 		    if(debug_is_RB) begin
-	            debug_reg[7:0] <= {y[7:0]};
+	            debug_reg[7:0] <= {y[7:0]}; //}
             end 
 		end
 	end 
@@ -262,5 +257,3 @@ end
 assign o_debug_led[7:0] = debug_reg[7:0];
 
 endmodule
-         
-
