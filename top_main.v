@@ -247,8 +247,14 @@ assign  adder_valid_num_wire = (&adder_num_test);
 // use uart_rx_rdy to make sure UART Rx data is latched in
 // logci is running at clk_in domain, uart_rx_data_rdy is running at 
 // CLKOS 1.9MHz from PLL.  resync this signal first
+// smooth out uart rx ready first
+// the logic is changed to use clk_in to verify the edge and a smooth filter to 
+// reduce the noise uart rx rdy signal
+reg [7:0] l_uart_rx_data_rdy_smoth_tap;
 reg [1:0] l_uart_rx_data_rdy_tap;
 wire uart_rx_data_rdy_sync_posedge = l_uart_rx_data_rdy_tap[0] & ~l_uart_rx_data_rdy_tap[1];
+wire uart_rx_data_rdy_smooth_level = l_uart_rx_data_rdy_smoth_tap[0] & l_uart_rx_data_rdy_smoth_tap [1] & 
+                                    ~l_uart_rx_data_rdy_smoth_tap[6] & ~l_uart_rx_data_rdy_smoth_tap[7];
 
 always @ (posedge clk_in) begin
     if(i_rst) begin
@@ -261,7 +267,9 @@ always @ (posedge clk_in) begin
         adder_ctrl_char <= 0;
     end
     else begin
-        l_uart_rx_data_rdy_tap[1:0] <= {l_uart_rx_data_rdy_tap[0], uart_rx_data_rdy};
+        l_uart_rx_data_rdy_smoth_tap[7:0] <= {l_uart_rx_data_rdy_smoth_tap[6:0], uart_rx_data_rdy};
+        l_uart_rx_data_rdy_tap[1:0] <= {l_uart_rx_data_rdy_tap[0], uart_rx_data_rdy_smooth_level};
+        //l_uart_rx_data_rdy_tap[1:0] <= {l_uart_rx_data_rdy_tap[0], uart_rx_data_rdy};
     
         if (uart_rx_data_rdy_sync_posedge) begin
             if ( adder_input_count >= 2'b10) begin
@@ -367,7 +375,7 @@ wire        adder_shift_tmp;
 reg adder_data_rdy;
 reg adder_data_rdy_sync;
 reg [5:0] adder_data_rdy_tap;
-wire adder_data_rdy_tap_tst = adder_data_rdy_tap[0] & adder_data_rdy_tap[1] & ~adder_data_rdy_tap[1];
+wire adder_data_rdy_tap_tst = adder_data_rdy_tap[0] & adder_data_rdy_tap[1] & ~adder_data_rdy_tap[5];
 reg [3:0] uart_tx_bit_delay_tap;
 reg [1:0] uart_tx_bit_clk_posedge;
       
