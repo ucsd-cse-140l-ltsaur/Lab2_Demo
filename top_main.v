@@ -176,22 +176,22 @@ assign uart_rx_data_rdy = ((&i_rst_test))? 0:(|shift_reg1_wire);
 // uart_rx_rdy is at CLKOS 1.9MHz from PLL
 // sync the signal first
 reg [1:0] uart_rx_rdy_sync_tap;
+wire l_uart_rx_rdy_sync_posedge = uart_rx_rdy_sync_tap[0] & ~uart_rx_rdy_sync_tap[1];
 
 always @ (posedge clk_in)
 begin
-    if(i_rst)
+    if(i_rst) begin
 	    uart_rx_rdy_sync_tap[1:0] <= 2'b00;
-	else
-	    uart_rx_rdy_sync_tap[1:0] <= {uart_rx_rdy_sync_tap[0], uart_rx_rdy};
-end
-wire l_uart_rx_rdy_sync = uart_rx_rdy_sync_tap[0] & ~uart_rx_rdy_sync_tap[1];
-always @ (posedge l_uart_rx_rdy_sync or posedge i_rst) 
-begin
-        if(i_rst)
 		uart_rx_data[7:0] <= 2'h00;
-		else begin
-        uart_rx_data[7:0] <= {o_rx_data[7:6], o_rx_data[5], o_rx_data[4:0]} ; //flip bit5 to convert to uppter case
-		end
+	end
+	else begin
+	    uart_rx_rdy_sync_tap[1:0] <= {uart_rx_rdy_sync_tap[0], uart_rx_rdy};
+
+        if (l_uart_rx_rdy_sync_posedge) 
+            uart_rx_data[7:0] <= {o_rx_data[7:6], o_rx_data[5], o_rx_data[4:0]} ; //flip bit5 to convert to uppter case
+		else
+		    uart_rx_data <= uart_rx_data;
+	end
 end
 
 
@@ -247,59 +247,67 @@ assign  adder_valid_num_wire = (&adder_num_test);
 // use uart_rx_rdy to make sure UART Rx data is latched in
 // logci is running at clk_in domain, uart_rx_data_rdy is running at 
 // CLKOS 1.9MHz from PLL.  resync this signal first
-reg [7:0] l_uart_rx_data_rdy_tap;
-always @ (posedge clk_in) 
-begin
-    if(i_rst)
-	    l_uart_rx_data_rdy_tap[7:0] <= 2'h00;
-	else begin
-	    l_uart_rx_data_rdy_tap[7:0] <= {l_uart_rx_data_rdy_tap[6:0], uart_rx_data_rdy};
-	end
-end
-wire uart_rx_data_rdy_sync = l_uart_rx_data_rdy_tap[0] & l_uart_rx_data_rdy_tap [1] & 
-                             ~l_uart_rx_data_rdy_tap[6] & ~l_uart_rx_data_rdy_tap[7];
-always @ (posedge uart_rx_data_rdy_sync or posedge i_rst)
-begin
+reg [1:0] l_uart_rx_data_rdy_tap;
+wire uart_rx_data_rdy_sync_posedge = l_uart_rx_data_rdy_tap[0] & ~l_uart_rx_data_rdy_tap[1];
+
+always @ (posedge clk_in) begin
     if(i_rst) begin
+	    l_uart_rx_data_rdy_tap[1:0] <= 2'b00;
         adder_input_count <= 2'b00;
         adder_start <= 1'b0;
 		adder_ctrl <= 1'b0;
         r1 <= 2'h00;
         r2 <= 2'h00;
-    end else 
-	begin 
-	    if ( adder_input_count >= 2'b10) begin
-	        if ( adder_pluse_wire) begin // 3th letter is '+' or '-'
-				adder_substrate <= 0;
-	            adder_start <= 1'b1;
-		    end else 
-			if ( adder_substrate_wire) begin
-			    adder_substrate <= 1'b1;
-		        adder_start <= 1'b1;
-		    end 
-			else begin
-			    adder_substrate <= 0;
-			end		
-            adder_ctrl <= 0;
-	        adder_input_count <= 2'b00;
-	    end else 
-		begin
-	        if(adder_valid_num_wire) begin
-	            if ( adder_input_count == 2'b00)
-	                r1[7:0] <= uart_rx_data[7:0];
-	            else if ( adder_input_count == 2'b01)
-	                r2[7:0] <= uart_rx_data[7:0];					 	
-		        adder_input_count <= adder_input_count + 1;
-				adder_ctrl <= 0;
-		    end 
-			else begin 
-			    adder_ctrl_char[7:0] <= uart_rx_data[7:0];
-				adder_ctrl <= 1;
-		        adder_input_count <= 2'b00;
-			end
-	        adder_start <= 0;
+		adder_ctrl_char <= 0;
+	end
+	else begin
+	    l_uart_rx_data_rdy_tap[1:0] <= {l_uart_rx_data_rdy_tap[0], uart_rx_data_rdy};
+	
+        if (uart_rx_data_rdy_sync_posedge) begin
+ 	        if ( adder_input_count >= 2'b10) begin
+	            if ( adder_pluse_wire) begin // 3th letter is '+' or '-'
+				    adder_substrate <= 0;
+	                adder_start <= 1'b1;
+		        end else 
+			    if ( adder_substrate_wire) begin
+			        adder_substrate <= 1'b1;
+		            adder_start <= 1'b1;
+		        end 
+			    else begin
+			        adder_substrate <= 0;
+			    end		
+                adder_ctrl <= 0;
+	            adder_input_count <= 2'b00;
+	        end else 
+		    begin
+	            if(adder_valid_num_wire) begin
+	                if ( adder_input_count == 2'b00)
+	                    r1[7:0] <= uart_rx_data[7:0];
+	                else if ( adder_input_count == 2'b01)
+	                    r2[7:0] <= uart_rx_data[7:0];					 	
+		            adder_input_count <= adder_input_count + 1;
+				    adder_ctrl <= 0;
+		        end 
+			    else begin 
+			        adder_ctrl_char[7:0] <= uart_rx_data[7:0];
+				    adder_ctrl <= 1;
+		            adder_input_count <= 2'b00;
+			    end
+	            adder_start <= 0;
+		    end
+        end
+		else begin
+		    adder_substrate <= adder_substrate;
+            adder_input_count <= adder_input_count;
+
+			adder_start <= adder_start;
+            r1 <= r1;
+            r2 <= r2;
+			
+			adder_ctrl <= adder_ctrl;
+			adder_ctrl_char <= adder_ctrl_char;
 		end
-    end
+	end
 end
 
 //-------------------- Lab2
@@ -391,7 +399,11 @@ begin
         end			
 		else if(adder_shift_tmp)  begin
 		    adder_data_rdy <= 1'b0;  //clear the status as only one bit is needed in the tap line
-		end		
+		end
+        else begin
+		    adder_data_rdy <= adder_data_rdy;
+		end
+		
 	    
 		//set adder_data_rdy_sync after tx uart is idle
 		if(uart_rx_rdy | !tsr_is_empty) begin //wait for tx release and tx fifo empty 
@@ -736,8 +748,8 @@ assign debug_is_93 = &debug_93_test;
 
 wire [7:0] debug_wire;
 assign debug_wire[7:0] = 
-                         debug_is_CR?  {1'b0,1'b0, 1'b0, debug_test[4:0]}:  
-                         debug_is_DEL? {1'b0,1'b0, 1'b0, debug_test1[4:0]}:
+                         debug_is_CR?  db_DUT_in1 [7:0]: //{1'b0,1'b0, 1'b0, debug_test[4:0]}:  
+                         debug_is_DEL? db_DUT_in2 [7:0]: //{1'b0,1'b0, 1'b0, debug_test1[4:0]}:
 						 debug_is_BS?  {1'b0,1'b0, 1'b0, debug_test2[4:0]}: 
 						 debug_is_TAB? {1'b0,1'b0, 1'b0, debug_test3[4:0]}: 
 //						 debug_is_91?  {1'b0,1'b0, 1'b0, debug_test4[4:0]}: // '['
@@ -751,8 +763,3 @@ assign debug_wire[7:0] =
  assign led[4] = debug_wire[4];                      
 
 endmodule
-
-
-
-
-
