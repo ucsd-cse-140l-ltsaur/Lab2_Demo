@@ -65,8 +65,8 @@ assign i_data_rdy_local_posedge = i_data_rdy_tap[0] & ~i_data_rdy_tap[1];
 always @(posedge i_clk_in) begin
     if(i_rst) begin
         i_data_rdy_tap[1:0] <= 2'b00;
-        x <= 2'h00;
-        y <= 2'h00;
+        x <= 8'h00;
+        y <= 8'h00;
         l_cin <= 1'b0;
         rst_test <= 1;
     end
@@ -121,7 +121,7 @@ assign o_rdy = o_adder_data_ready;
 
 always @(posedge i_clk_in or posedge i_rst) begin       
     if(i_rst) begin
-        adder_data_ready_reg <= 4'h0000;
+        adder_data_ready_reg <= 16'h0000;
     end 
     else begin
         adder_data_ready_reg[15:0] <= {adder_data_ready_reg[14:0], adder_data_ready_wire}; 
@@ -225,7 +225,7 @@ begin
 
     if (i_ctrl_signal) begin
         if(debug_is_DEL) begin  //some debug reset 
-            debug_reg[7:0] <= {2'h00};
+            debug_reg[7:0] <= {8'h00};
         end else 
         begin
             if(debug_is_CR) begin
