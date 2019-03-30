@@ -34,15 +34,18 @@
 // top level for lab2
 //
 module lab2_top(
-		input clk_in,
-		input wire from_pc,
-		output wire to_ir,
-		input wire i_serial_data,
-		output wire o_serial_data,
-		output test1,
-		output test2,
-		output test3,
-		output [7:0] led
+		input 	     i_rst,
+		output       sd,
+ 	     
+		input 	     clk_in,
+		input wire   from_pc,
+		output wire  to_ir,
+//		input wire   i_serial_data,
+		output wire  o_serial_data,
+		output 	     test1,
+		output 	     test2,
+		output 	     test3,
+		output [4:0] led
 		);
    
 

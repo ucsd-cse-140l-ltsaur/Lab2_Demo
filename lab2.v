@@ -37,14 +37,15 @@ module Lab2_140L (
  input wire i_substrate_signal,
  input wire [7:0] i_r1           , // 8bit number 1
  input wire [7:0] i_r2           , // 8bit number 1
- input wire i_cin           , // carry in
+// input wire i_cin           , // carry in
  input wire [7:0] i_ctrl         , // input ctrl char
  output wire [3:0] o_sum    ,
  output wire o_cout         ,
  output wire o_rdy          , //pulse
- output wire o_debug_test1  ,
- output wire o_debug_test2  ,
- output wire o_debug_test3  ,
+
+// output wire o_debug_test1  ,
+// output wire o_debug_test2  ,
+// output wire o_debug_test3  ,
  output wire [7:0] o_debug_led   
 );
 
@@ -128,7 +129,7 @@ always @(posedge i_clk_in or posedge i_rst) begin
         
         if(adder_data_ready_reg[11]) begin
             if(i_substrate_signal)
-                result_reg[7:0] <= {1'b0, 1'b0, 1'b0, 0, result[3:0]}; //latch in result    
+                result_reg[7:0] <= {1'b0, 1'b0, 1'b0, 1'b0, result[3:0]}; //latch in result    
             else
                 result_reg[7:0] <= {1'b0, 1'b0, 1'b0, result[4:0]}; //latch in result
         end

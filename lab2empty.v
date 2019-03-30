@@ -25,13 +25,16 @@ wire[3:0]  y = i_r2[3:0] ^ {4{i_substract_signal}};
 
 // Adder circuit
 
-fourbit_adder adderInst (
-.sum(o_sum)           , // Output of the adder
-.carry(o_cout)         , // Carry output of adder
-.r1(x)            , // first input
-.r2(y)            , // second input
-.ci(i_substract_signal)              // carry input
-);
+   assign o_debug_led =  {3'b0, o_cout, o_sum};
+   
+
+   fourbit_adder adderInst (
+			    .sum(o_sum)           , // Output of the adder
+			    .carry(o_cout)         , // Carry output of adder
+			    .r1(x)            , // first input
+			    .r2(y)            , // second input
+			    .ci(i_substract_signal)              // carry input
+			    );
 
 // Delay logic
 
