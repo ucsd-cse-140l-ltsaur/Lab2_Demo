@@ -25,7 +25,8 @@ wire[3:0]  y = i_r2[3:0] ^ {4{i_substract_signal}};
 
 // Adder circuit
 
-   assign o_debug_led =  {3'b0, o_cout, o_sum};
+//   assign o_debug_led =  {3'b0, o_cout, o_sum};
+   assign o_debug_led =  {3'b0, i_substract_signal, o_sum};
    
 
    fourbit_adder adderInst (
