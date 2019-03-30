@@ -104,18 +104,18 @@ module lab2_top(
 		    .i_rst   (tb_rst)                     , // reset signal
 		    .i_clk_in  (tb_clk)               ,
 		    .i_data_rdy (input_adder_start)      , //(posedge)
-		    .i_ctrl_signal (adder_ctrl)          , 
-		    .i_substrate_signal (adder_substrate), 
+//		    .i_ctrl_signal (adder_ctrl)          , 
+		    .i_substract_signal (adder_substrate), 
 		    .i_r1    (r1_wire[7:0])                        , // 8bit number 1
 		    .i_r2    (r2_wire[7:0])                        , // 8bit number 1
-		    .i_cin   ( )                          , //carry in
-		    .i_ctrl (adder_ctrl_char_wire[7:0])            , //ctrl letter
+//		    .i_cin   ( )                          , //carry in
+//		    .i_ctrl (adder_ctrl_char_wire[7:0])            , //ctrl letter
 		    .o_sum   (adder_o_data[3:0])         ,
 		    .o_cout  (adder_o_data[4])           ,
 		    .o_rdy (adder_o_rdy)                 , //output rdy pulse, 2 i_clk_in cycles
-		    .o_debug_test1 (o_debug_test1)         , //output test point1
-		    .o_debug_test2 (o_debug_test2)         , //output test point2
-		    .o_debug_test3 (o_debug_test3)         , //output test point3
+//		    .o_debug_test1 (o_debug_test1)         , //output test point1
+//		    .o_debug_test2 (o_debug_test2)         , //output test point2
+//		    .o_debug_test3 (o_debug_test3)         , //output test point3
 		    .o_debug_led   (debug_led[7:0])        //output LED
 );
 
@@ -484,25 +484,6 @@ module tb_hdw(
    end
    //wire input_adder_start;
    assign input_adder_start = adder_start_tap[0] & ~adder_start_tap[2];
-   
-   Lab2_140L Lab_UT(
-		    .i_rst   (i_rst)                     , // reset signal
-		    .i_clk_in  (input_clk)               ,
-		    .i_data_rdy (input_adder_start)      , //(posedge)
-		    .i_ctrl_signal (adder_ctrl)          , 
-		    .i_substrate_signal (adder_substrate), 
-		    .i_r1    (r1_wire[7:0])                        , // 8bit number 1
-		    .i_r2    (r2_wire[7:0])                        , // 8bit number 1
-		    .i_cin   ( )                          , //carry in
-		    .i_ctrl (adder_ctrl_char_wire[7:0])            , //ctrl letter
-		    .o_sum   (adder_o_data[3:0])         ,
-		    .o_cout  (adder_o_data[4])           ,
-		    .o_rdy (adder_o_rdy)                 , //output rdy pulse, 2 i_clk_in cycles
-		    .o_debug_test1 (o_debug_test1)         , //output test point1
-		    .o_debug_test2 (o_debug_test2)         , //output test point2
-		    .o_debug_test3 (o_debug_test3)         , //output test point3
-		    .o_debug_led   (debug_led[7:0])        //output LED
-		    );
    
    //assign adder_o_data[7:5] 
    //convert adder_o_data 000~1FF to ASCII chars @,A,B,C,...,_
