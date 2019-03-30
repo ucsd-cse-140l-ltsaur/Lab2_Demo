@@ -40,7 +40,6 @@ module lab2_top(
 		input 	     clk_in,
 		input wire   from_pc,
 		output wire  to_ir,
-//		input wire   i_serial_data,
 		output wire  o_serial_data,
 		output 	     test1,
 		output 	     test2,
@@ -72,7 +71,7 @@ module lab2_top(
 
    wire [7:0] adder_ctrl_char_wire;
 
-`define HW 1
+// `define HW 1
 `ifdef HW
    tb_hdw tb_hdw (
 		  .clk_in(clk_in),
@@ -83,11 +82,13 @@ module lab2_top(
 		  .test1(test1),
 		  .test2(test2),
 		  .test3(test3),
+		  .led(led),
 
 		  .i_rst(tb_rst),
 		  .input_clk(tb_clk),
 		  .input_adder_start(input_adder_start),
 		  .adder_ctrl(adder_ctrl),
+		  .adder_substrate(adder_substrate),
 		  .r1_wire(r1_wire),
 		  .r2_wire(r2_wire),
 		  .adder_ctrl_char_wire(adder_ctrl_char_wire),
@@ -99,9 +100,33 @@ module lab2_top(
 		  .debug_led(debug_led)
 		  );
 `else
-   tb_sft tb_sft ();
+   tb_sft tb_sft (
+		  .clk_in(clk_in),
+		  .from_pc(from_pc),
+		  .to_ir(to_ir),
+		  .i_serial_data(i_serial_data),
+		  .o_serial_data(o_serial_data),
+		  .test1(test1),
+		  .test2(test2),
+		  .test3(test3),
+		  .led(led),
+		  
+		  .tb_i_rst(tb_rst),
+		  .tb_input_clk(tb_clk),
+		  .tb_input_adder_start(input_adder_start),
+		  .tb_adder_ctrl(adder_ctrl),
+		  .tb_adder_subtract(adder_substrate),
+		  .tb_r1(r1_wire),
+		  .tb_r2(r2_wire),
+		  .tb_adder_ctrl_char_wire(adder_ctrl_char_wire),
+		  .adder_o_data(adder_o_data),
+		  .adder_o_rdy(adder_o_rdy),
+		  .o_debug_test1(o_debug_test1),
+		  .o_debug_test2(o_debug_test2),
+		  .o_debug_test3(o_debug_test3),
+		  .debug_led(debug_led)
+		  );
 `endif   
-
 
    Lab2_140L Lab_UT(
 		    .i_rst   (tb_rst)                     , // reset signal
@@ -136,7 +161,7 @@ module tb_hdw(
 	      output 	   test1,
 	      output 	   test2,
  	      output 	   test3,
-	      output [7:0] led,
+	      output [4:0] led,
 
 	      // DUT Interface
 	      output       i_rst, 	   
@@ -339,24 +364,19 @@ module tb_hdw(
      end
    
    
-   //---------------------------------------
-   // interface to 4-bit adder here
-   //  r1 + r2 = adder_o_data
-   // local variables
+
    reg [7:0] r1, r2; //4-bit buffers
    reg [1:0] adder_input_count; //internal state machine
    reg 	     adder_start;
-   //reg 	     adder_ctrl;
-   //reg 	     adder_substrate;
    reg [7:0] adder_ctrl_char;
-   //reg adder_valid_num;
    
-   wire [7:0] adder_p_test;
-   wire [7:0] adder_n_test;
-   wire [3:0] adder_num_test;
-   wire       adder_p_test_wire;
-   wire       adder_n_test_wire;
-   wire       adder_valid_num_wire;
+   wire [7:0] adder_p_test;      // decode '+'
+   wire [7:0] adder_n_test;      // decode '-'
+   wire [3:0] adder_num_test;    // valid number 0-9:;<=>?
+                                 // FIXME - need to add a-f as valid numbers
+   wire       adder_p_test_wire; // decode '+'
+   wire       adder_n_test_wire; // decode '-'
+   wire       adder_valid_num_wire; // decode valid number
    
    assign is_uart_rx_b0_1 = uart_rx_data[0] ^ 1'b0;
    assign is_uart_rx_b1_1 = uart_rx_data[1] ^ 1'b0;
@@ -463,15 +483,8 @@ module tb_hdw(
    end
    
    //-------------------- Lab2
-   //wire [7:0] debug_led;
-   //wire       o_debug_test1;
-   //wire       o_debug_test2;
-   //wire       o_debug_test3;
-   //wire [7:0] adder_ctrl_char_wire;
    assign adder_ctrl_char_wire[7:0] = adder_ctrl_char[7:0];
-   //wire [7:0] r1_wire;
    assign r1_wire[7:0] = r1[7:0];
-   //wire [7:0] r2_wire;
    assign r2_wire[7:0] = r2[7:0];
    
    // define input clk
@@ -509,7 +522,7 @@ module tb_hdw(
 	if(i_rst) begin
            uart_tx_bit_clk_posedge <= 2'b00;
            uart_tx_bit_delay_tap <= 4'h0;
-           adder_data_rdy_tap[5:0] <= 2'b00;
+           adder_data_rdy_tap[5:0] <= 6'b00;
            adder_data_rdy      <= 1'b0;
            adder_data_rdy_sync <= 1'b0;
            adder_shift_reg2[19:0] <= 5'h00000;
