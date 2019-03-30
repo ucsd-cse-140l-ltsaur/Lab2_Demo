@@ -65,7 +65,9 @@ module lab2_top(
    wire       o_debug_test1;
    wire       o_debug_test2;
    wire       o_debug_test3;
-   wire       debug_led[7:0];
+   wire       [7:0]debug_led;
+
+   wire [7:0] adder_ctrl_char_wire;
 
 `define HW 1
 `ifdef HW
@@ -135,20 +137,20 @@ module tb_hdw(
 
 	      // DUT Interface
 	      output       i_rst, 	   
-	      output 	   input_clk,
-	      output 	   input_adder_start,
-	      output 	   adder_ctrl,
-	      output 	   adder_substrate,
-	      output [7:0] r1_wire,
-	      output [7:0] r2_wire,
-	      output [7:0] adder_ctrl_char_wire,
+	      output 	   wire input_clk,
+	      output 	   wire input_adder_start,
+	      output 	   reg adder_ctrl,
+	      output 	   reg adder_substrate,
+	      output wire [7:0] r1_wire,
+	      output wire [7:0] r2_wire,
+	      output wire [7:0] adder_ctrl_char_wire,
 
 	      input [7:0]  adder_o_data,
 	      input 	   adder_o_rdy,
-	      input 	   o_debug_test1,
-	      input 	   o_debug_test2,
-	      input 	   o_debug_test3,
-	      input [7:0]  debug_led
+	      input 	   wire o_debug_test1,
+	      input 	   wire o_debug_test2,
+	      input 	   wire o_debug_test3,
+	      input wire [7:0]  debug_led
 	      );
    
 
@@ -341,8 +343,8 @@ module tb_hdw(
    reg [7:0] r1, r2; //4-bit buffers
    reg [1:0] adder_input_count; //internal state machine
    reg 	     adder_start;
-   reg 	     adder_ctrl;
-   reg 	     adder_substrate;
+   //reg 	     adder_ctrl;
+   //reg 	     adder_substrate;
    reg [7:0] adder_ctrl_char;
    //reg adder_valid_num;
    
@@ -458,19 +460,19 @@ module tb_hdw(
    end
    
    //-------------------- Lab2
-   wire [7:0] debug_led;
-   wire       o_debug_test1;
-   wire       o_debug_test2;
-   wire       o_debug_test3;
-   wire [7:0] adder_ctrl_char_wire;
+   //wire [7:0] debug_led;
+   //wire       o_debug_test1;
+   //wire       o_debug_test2;
+   //wire       o_debug_test3;
+   //wire [7:0] adder_ctrl_char_wire;
    assign adder_ctrl_char_wire[7:0] = adder_ctrl_char[7:0];
-   wire [7:0] r1_wire;
+   //wire [7:0] r1_wire;
    assign r1_wire[7:0] = r1[7:0];
-   wire [7:0] r2_wire;
+   //wire [7:0] r2_wire;
    assign r2_wire[7:0] = r2[7:0];
    
    // define input clk
-   wire       input_clk = clk_in;  //CLKOP or clk_in or CLKOS
+   assign input_clk = clk_in;  //CLKOP or clk_in or CLKOS
    reg [2:0]  adder_start_tap;
    
    // generate start strob, sync to input clk
@@ -480,7 +482,7 @@ module tb_hdw(
       else 
         adder_start_tap[2:0] <= {adder_start_tap[1:0], adder_start};
    end
-   wire input_adder_start;
+   //wire input_adder_start;
    assign input_adder_start = adder_start_tap[0] & ~adder_start_tap[2];
    
    Lab2_140L Lab_UT(
