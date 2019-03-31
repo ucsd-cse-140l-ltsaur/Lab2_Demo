@@ -29,7 +29,6 @@ module tb_sft(
 
    initial begin
       clk12m <= 0;
-
    end
    always @(*) begin
       #41;
@@ -45,6 +44,7 @@ module tb_sft(
 	@(posedge clk);
 	obyt = 8'b0;
 	ordy = 0;
+	$write("%d", byt);
      end
    endtask
 
@@ -53,6 +53,7 @@ module tb_sft(
    end
    
    initial begin
+
       sendByte(clk12m, 8'd4, tb_rx_data, tb_rx_data_rdy);
       sendByte(clk12m, 8'd3, tb_rx_data, tb_rx_data_rdy);
       sendByte(clk12m, "+", tb_rx_data, tb_rx_data_rdy);
