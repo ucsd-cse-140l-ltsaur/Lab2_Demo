@@ -33,18 +33,26 @@
 //
 // top level for lab2
 //
-module lab2_top(
-		input 	     i_rst,
-		output       sd,
+module latticehx1k(
+		   input 	i_rst,
+		   output 	sd,
  	     
-		input 	     clk_in,
-		input wire   from_pc,
-		output wire  to_ir,
-		output wire  o_serial_data,
-		output 	     test1,
-		output 	     test2,
-		output 	     test3,
-		output [4:0] led
+		   input 	clk_in,
+		   input wire 	from_pc,
+		   output wire 	to_ir,
+		   output wire 	o_serial_data,
+		   output 	test1,
+		   output 	test2,
+		   output 	test3,
+		   output [4:0] led,
+
+		   // for software only
+		   input [7:0]  tb_rx_data,      // pretend data coming from the uart
+		   input        tb_rx_data_rdy,  //
+
+		   output [7:0] ut_tx_data,      // shortcut, data from the fake tx uart
+		   output       ut_tx_data_rdy
+
 		);
    
 
@@ -71,9 +79,7 @@ module lab2_top(
 
    wire [7:0] adder_ctrl_char_wire;
 
-// `define HW 1
-`ifdef HW
-   tb_hdw tb_hdw (
+   SE_serial_io serial_io (
 		  .clk_in(clk_in),
 		  .from_pc(from_pc),
 		  .to_ir(to_ir),
@@ -97,36 +103,16 @@ module lab2_top(
 		  .o_debug_test1(o_debug_test1),
 		  .o_debug_test2(o_debug_test2),
 		  .o_debug_test3(o_debug_test3),
-		  .debug_led(debug_led)
+		  .debug_led(debug_led),
+
+			   .tb_rx_data(tb_rx_data),
+			   .tb_rd_data_rdy(tb_rx_data_rdy),
+			   .ut_tx_data(ut_tx_data),
+			   .ut_tx_data_rdy(ut_tx_data_rdy)
+
+
+
 		  );
-`else
-   tb_sft tb_sft (
-		  .clk_in(clk_in),
-		  .from_pc(from_pc),
-		  .to_ir(to_ir),
-		  .i_serial_data(i_serial_data),
-		  .o_serial_data(o_serial_data),
-		  .test1(test1),
-		  .test2(test2),
-		  .test3(test3),
-		  .led(led),
-		  
-		  .tb_i_rst(tb_rst),
-		  .tb_input_clk(tb_clk),
-		  .tb_input_adder_start(input_adder_start),
-		  .tb_adder_ctrl(adder_ctrl),
-		  .tb_adder_subtract(adder_substrate),
-		  .tb_r1(r1_wire),
-		  .tb_r2(r2_wire),
-		  .tb_adder_ctrl_char_wire(adder_ctrl_char_wire),
-		  .adder_o_data(adder_o_data),
-		  .adder_o_rdy(adder_o_rdy),
-		  .o_debug_test1(o_debug_test1),
-		  .o_debug_test2(o_debug_test2),
-		  .o_debug_test3(o_debug_test3),
-		  .debug_led(debug_led)
-		  );
-`endif   
 
    Lab2_140L Lab_UT(
 		    .i_rst   (tb_rst)                     , // reset signal
@@ -150,7 +136,7 @@ module lab2_top(
 
 endmodule // lab2_top
 
-module tb_hdw(
+module SE_serial_io(
 	      // pin interface 
 	      input 	   clk_in, // external input clock
 	      input wire   from_pc, // pin 9 UART RxD (form PC to Dev)
@@ -178,7 +164,13 @@ module tb_hdw(
 	      input 	   wire o_debug_test1,
 	      input 	   wire o_debug_test2,
 	      input 	   wire o_debug_test3,
-	      input wire [7:0]  debug_led
+	      input wire [7:0]  debug_led,
+
+		    input [7:0] tb_rx_data,
+		    input tb_rd_data_rdy,
+		    output [7:0] ut_tx_data,
+		    output ut_tx_data_rdy
+
 	      );
    
 
@@ -251,14 +243,18 @@ module tb_hdw(
    
    assign i_rst = ~rst_count[19] ;
    
+`ifdef HW
    // PLL instantiation
    ice_pll ice_pll_inst(
+
+`else
+   fake_pll ice_pll_inst(
+`endif       
 			.REFERENCECLK ( clk_in        ),  // input 12MHz
 			.PLLOUTCORE   ( CLKOP         ),  // output 38MHz
 			.PLLOUTGLOBAL ( PLLOUTGLOBAL  ),
 			.RESET        ( 1'b1  )
 			);
-   
    reg [3:0] clk_count ; 
    reg 	     CLKOS_reg ;
    assign CLKOS = CLKOS_reg;
@@ -281,7 +277,9 @@ module tb_hdw(
 	 if ( clk_count == 9 ) CLKOS_reg <= ~CLKOS_reg ;    //1.9Mhz
       end
    end
-   
+
+
+`ifdef HW   
    // UART RX instantiation
    uart_rx_fsm uut1 (                   
 					.i_clk                 ( CLKOP           ), //38MHz
@@ -305,7 +303,17 @@ module tb_hdw(
 					.i_int_serial_data     (                 ),
 					.i_serial_data         ( from_pc         ) // from_pc UART signal
 					);
-   
+`else // !`ifdef HW
+   tb_fake_uart_rx uut1 (
+			 .i_clk (CLKOP),
+			 .i_rst(i_rst),
+			 .o_rx_data_ready (o_rd_data_ready),
+			 .o_rx_data(o_rx_data),
+			 .tb_rx_data(tb_rx_data),
+			 .tb_rx_data_rdy(tb_rx_data_rdy));
+`endif   
+
+
    reg [3:0] count ;
    reg [17:0] shift_reg1 ;  //increase by 1 to delay strobe
    reg [19:0] shift_reg2 ;
@@ -525,7 +533,7 @@ module tb_hdw(
            adder_data_rdy_tap[5:0] <= 6'b00;
            adder_data_rdy      <= 1'b0;
            adder_data_rdy_sync <= 1'b0;
-           adder_shift_reg2[19:0] <= 5'h00000;
+           adder_shift_reg2[19:0] <= 20'h00000;
 	end
 	else begin
            adder_shift_reg2[19:0] <= {adder_shift_reg2[18:0], adder_data_rdy_sync};
@@ -631,6 +639,7 @@ module tb_hdw(
    //assign    i_tx_data[7:0] = uart_rx_data[7:0];
    //assign  i_start_tx = uart_rx_data_rdy;
 
+`ifdef HW
    // UART TX instantiation
    uart_tx_fsm uut2(                                
 						    .i_clk                 ( count[3]      ),   
@@ -654,6 +663,17 @@ module tb_hdw(
 						    .o_serial_data_local   ( o_serial_data )    //pin 8 UART TXD (from Dev to PC)
 						    );                                          
 
+`else // !`ifdef HW
+    tb_fake_uart_tx uut2 (
+			  .i_clk( count[3] ),
+			  .i_rst( i_rst ),
+			  .i_tx_data( i_tx_data ),
+			  .i_start_tx( i_start_tx ),
+			  .ut_tx_data( ut_tx_data ),
+			  .ut_tx_data_rdy( ut_tx_data_rdy)
+			  );
+
+`endif
    /*
     //-------------------------------------------------------------------------------
     // write to IR tx
