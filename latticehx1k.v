@@ -35,7 +35,6 @@
 // top level for lab2
 //
 module latticehx1k(
-		   input 	i_rst,
 		   output 	sd,
  	     
 		   input 	clk_in,
@@ -48,6 +47,7 @@ module latticehx1k(
 		   output [4:0] led,
 
 		   // for software only
+		   input 	tb_sim_rst,
 		   input [7:0]  tb_rx_data,      // pretend data coming from the uart
 		   input        tb_rx_data_rdy,  //
 
@@ -62,7 +62,7 @@ module latticehx1k(
    // tb_sft is not synthesized and is used to test the design in a simulation environment
 
    // interface signals btw tb and dut
-   wire tb_rst;			// reset signal from testbench to dut
+   wire i_rst;			// reset signal from testbench to dut
    wire tb_clk; 		// clock signal for dut
    wire input_adder_start;
    wire adder_ctrl;
@@ -91,7 +91,7 @@ module latticehx1k(
 		  .test3(test3),
 		  .led(led),
 
-		  .i_rst(tb_rst),
+		  .i_rst(i_rst),
 		  .input_clk(tb_clk),
 		  .input_adder_start(input_adder_start),
 		  .adder_ctrl(adder_ctrl),
@@ -109,14 +109,15 @@ module latticehx1k(
 			   .tb_rx_data(tb_rx_data),
 			   .tb_rd_data_rdy(tb_rx_data_rdy),
 			   .ut_tx_data(ut_tx_data),
-			   .ut_tx_data_rdy(ut_tx_data_rdy)
+			   .ut_tx_data_rdy(ut_tx_data_rdy),
+			   .tb_sim_rst(tb_sim_rst)
 
 
 
 		  );
 
    Lab2_140L Lab_UT(
-		    .i_rst   (tb_rst)                     , // reset signal
+		    .i_rst   (i_rst)                     , // reset signal
 		    .i_clk_in  (tb_clk)               ,
 		    .i_data_rdy (input_adder_start)      , //(posedge)
 //		    .i_ctrl_signal (adder_ctrl)          , 
@@ -167,10 +168,14 @@ module SE_serial_io(
 	      input 	   wire o_debug_test3,
 	      input wire [7:0]  debug_led,
 
-		    input [7:0] tb_rx_data,
+		  
+                    input [7:0] tb_rx_data,
 		    input tb_rd_data_rdy,
 		    output [7:0] ut_tx_data,
-		    output ut_tx_data_rdy
+		    output ut_tx_data_rdy,
+
+              // simulation only
+              input tb_sim_rst   // reset signal from the test bench to get rid of some x's
 
 	      );
    
@@ -226,13 +231,21 @@ module SE_serial_io(
    //assign i_rst_test[7:0] = {uart_rx_data[7]^1'b0, uart_rx_data[6]^1'b1,                    0, uart_rx_data[4]^1'b0,
    //                          uart_rx_data[3]^1'b0, uart_rx_data[2]^1'b0, uart_rx_data[1]^1'b1, uart_rx_data[0]^1'b1};
    // --- use esc char to reset (0x1B)
+   wire is_uart_rx_b7_0, is_uart_rx_b7_1;
+   wire is_uart_rx_b6_0, is_uart_rx_b6_1;
+   wire is_uart_rx_b5_0, is_uart_rx_b5_1;
+   wire is_uart_rx_b4_0, is_uart_rx_b4_1;
+   wire is_uart_rx_b3_0, is_uart_rx_b3_1;
+   wire is_uart_rx_b2_0, is_uart_rx_b2_1;
+   wire is_uart_rx_b1_0, is_uart_rx_b1_1;
+   wire is_uart_rx_b0_0, is_uart_rx_b0_1;
    assign i_rst_test[7:0] = {is_uart_rx_b7_0, is_uart_rx_b6_0, is_uart_rx_b5_0, is_uart_rx_b4_1,
                              is_uart_rx_b3_1, is_uart_rx_b2_0, is_uart_rx_b1_1, is_uart_rx_b0_1};
    
    always @ (posedge clk_in) begin
       if (rst_count >= (clk_freq/2)) begin
          
-         if(&i_rst_test) begin //letter is ESC 
+         if(&i_rst_test | tb_sim_rst) begin //letter is ESC 
             //generate reset pulse to adder
             rst_count <= 0;
          end
@@ -242,7 +255,13 @@ module SE_serial_io(
       
    end
    
-   assign i_rst = ~rst_count[19] ;
+`ifdef HW
+   	assign i_rst = ~rst_count[19] ;
+`else
+        assign i_rst = tb_sim_rst | ~rst_count[3];
+`endif
+
+	  
    
 `ifdef HW
    // PLL instantiation
@@ -331,6 +350,7 @@ module SE_serial_io(
       end
    end
    
+   wire rx_rdy;    // OR of shift_reg2;
    always @ (posedge CLKOS) begin  //1.9MHz
       if(i_rst) begin
          shift_reg1[17:0] <= {2'b00, 16'h0000};

@@ -3,12 +3,11 @@
 //
 module fake_pll(
 		input REFERENCECLK,
-		output PLLOUTCORE,
+		output reg PLLOUTCORE,   // 38 MHz
 		output PLLOUTGLOBAL,
 		input RESET
 		);
 
-   reg 		      PLLOUTCORE;  // 38 MHz
    initial
      PLLOUTCORE <= 0;
 
