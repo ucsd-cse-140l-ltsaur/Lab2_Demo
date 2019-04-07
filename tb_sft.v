@@ -31,12 +31,10 @@ module tb_sft(
    task sendByte(input [7:0] byt);
      begin
 		@(posedge clk12m);
-
-
-		tb_rx_data_rdy = 1;
-		tb_rx_data = byt;
+		tb_rx_data_rdy <= 1;
+		tb_rx_data     <= byt;
 		@(posedge clk12m);
-		tb_rx_data_rdy = 0;
+		tb_rx_data_rdy <= 0;
      end
    endtask
 
@@ -46,17 +44,17 @@ module tb_sft(
       clk12m <= 0;
       tb_rx_data = 8'b0;
       tb_rx_data_rdy = 1'b0;
-      #336;
+      #40
       tb_sim_rst <= 1;
-      #336;
-      #336;
-      #336;
-      #336;
+      #40
+      #40
+      #40
+      #40
       tb_sim_rst <= 0;
    end
 
    always @(*) begin
-      #41;
+      #40;
       clk12m <= ~clk12m;
    end
 
@@ -65,21 +63,26 @@ module tb_sft(
    end
 
    initial begin
-      #336;
-      #336;
-      #336;
-      #336;
-      #336;
+      #400;
+      #400;
 	@(posedge clk12m);
 	tb_rx_data = 8'b0;
 	tb_rx_data_rdy = 1'b0;
 	sendByte(8'd3);
 	sendByte(8'd4);
 	sendByte("+");
+	@(posedge clk12m);
+	@(posedge clk12m);
+	@(posedge clk12m);
+	@(posedge clk12m);
 
 	sendByte(8'd5);
 	sendByte(8'd2);
 	sendByte("-");
+	@(posedge clk12m);
+	@(posedge clk12m);
+	@(posedge clk12m);
+	@(posedge clk12m);
         $finish;
       
    end

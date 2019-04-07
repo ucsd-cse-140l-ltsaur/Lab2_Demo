@@ -7,7 +7,8 @@ SRC = latticehx1k.v \
       FourBitAdder.v \
 	FullAdder.v \
 	uart.v \
-	Lab2_140L.v
+	Lab2_140Lxc.v
+#	Lab2_140L.v
 lab2.bin : lab2.asc lab2.blif
 
 lab2.blif : $(SRC)
