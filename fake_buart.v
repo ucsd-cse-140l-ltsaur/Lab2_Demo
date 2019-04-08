@@ -19,9 +19,9 @@ module fake_buart(
 
    reg 			       to_dev_data_validD;    // delay one cycle
    
-   busy = 1'b0;
+   assign busy = 1'b0;
    
-   always @(resetq or posedge clk) begin
+   always @(posedge clk) begin
       if(resetq) begin
 	 rx_data <= 8'b0;
 	 fa_data <= 8'b0;

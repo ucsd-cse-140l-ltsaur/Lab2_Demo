@@ -18,15 +18,14 @@
 //   consistency and functionality through the use of formal
 //   verification methods.  
 //
-// --------------------------------------------------------------------
-//           
+// -------------------------------------------------------------------- //           
 //                     Lih-Feng Tsaur
 //                     UCSD CSE Department
 //                     9500 Gilman Dr, La Jolla, CA 92093
 //                     U.S.A
 //
 // --------------------------------------------------------------------
-`define HW
+// `define HW
 
 //
 // Revision History : 0.0
@@ -85,27 +84,6 @@ module decodeKeys(
 
 endmodule
 
-module bigDelay (
-		 output done,
-		 input start,
-		 input 	clk,
-		 input rst);
-
-   reg [10:0] 	       dCount;
-
-   always @(posedge clk) begin
-      if (rst | start) begin
-	 dCount <= 11'b0;
-      end
-      else
-	if (&dCount)
-	  dCount <= dCount;
-	else
-	  dCount <= dCount + 1;
-   end
-   always done = &dCount;
-endmodule
-      
 
 //
 // gl_fsm
@@ -139,10 +117,10 @@ module gl_fsm(
 
 `ifdef HW
 `else
-   always @(posedge tb_sim_rst) begin
-      state <= IDLE;
-      nxtState <= IDLE;
-   end
+//   always @(tb_sim_rst) begin
+//	kh   k
+ //     nxtState <= IDLE;
+//   end
 `endif
 
    always @(*) begin
@@ -289,12 +267,12 @@ module Glue_Lab2(
    
 `ifdef HW
 `else
-   always @(posedge tb_sim_rst) begin
-      Gl_r1 <= 8'b0;
-      Gl_r2 <= 8'b0;
-      Gl_Op <= 8'b0;
-      i_rst <= 1'b0;
-   end
+//   always @(posedge tb_sim_rst) begin
+ //     Gl_r1 <= 8'b0;
+ //     Gl_r2 <= 8'b0;
+ //     Gl_Op <= 8'b0;
+ //     i_rst <= 1'b0;
+ //  end
 `endif
    
 
@@ -405,6 +383,12 @@ module latticehx1k(
 `ifdef HW
    wire tb_sim_rst = 1'b0;
    
+   assign tx = 1'b0;
+   assign to_ir = 1'b0;
+   assign sd = 1'b0;
+   assign test1 = 1'b0;
+   assign test2 = 1'b0;
+   assign test3 = 1'b0;
    // for simple feedback path
    // pllout =   Frefclock * (DIVF+1) / [ 2^divq x (divr+1)]
    //  12 MHz * 4   / [ 2^0 x 1] = 48 MHz

@@ -1,6 +1,7 @@
 //
 // software testbench for simulation
 //
+
 module tb_sft(
 	      output reg   tb_sim_rst,
 	      output reg   clk12m,
@@ -62,22 +63,29 @@ module tb_sft(
       displayLattice(leds);
    end
 
+   always @(posedge ut_tx_data_rdy) begin
+	   #1;
+	   $display("%s", ut_tx_data);
+   end
+
+ 
+
    initial begin
       #400;
       #400;
 	@(posedge clk12m);
 	tb_rx_data = 8'b0;
 	tb_rx_data_rdy = 1'b0;
-	sendByte(8'd3);
-	sendByte(8'd4);
+	sendByte("3");
+	sendByte("4");
 	sendByte("+");
 	@(posedge clk12m);
 	@(posedge clk12m);
 	@(posedge clk12m);
 	@(posedge clk12m);
 
-	sendByte(8'd5);
-	sendByte(8'd2);
+	sendByte("5");
+	sendByte("2");
 	sendByte("-");
 	@(posedge clk12m);
 	@(posedge clk12m);
